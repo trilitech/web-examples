@@ -264,28 +264,28 @@ export enum DEFAULT_TEZOS_METHODS {
 const tezosTransactionOperation: PartialTezosTransactionOperation = {
   kind: TezosOperationType.TRANSACTION,
   destination: "$(peerAddress)",
-  amount: "1000"
+  amount: "100"
 };
 
 const tezosOriginationOperation: PartialTezosOriginationOperation = {
   kind: TezosOperationType.ORIGINATION,
   balance: '1',
-  script: {
+  script: { // This contract adds the parameter to the storage value
     code: [
-      { "prim": "parameter", "args": [{ "prim": "unit" }] },
-      { "prim": "storage", "args": [{ "prim": "int" }] },
-      {
-        "prim": "code",
-        "args": [[
-          { "prim": "CDR" },
-          { "prim": "PUSH", "args": [{ "prim": "int" }, { "int": "10" }] },
-          { "prim": "ADD" },
-          { "prim": "NIL", "args": [{ "prim": "operation" }] },
-          { "prim": "PAIR" }
+      { prim: "parameter", args: [{ prim: "int" }] },
+      { prim: "storage", args: [{ prim: "int" }] },
+      { prim: "code",
+        args: [[
+            { prim: "DUP" },                                // Duplicate the parameter (parameter is pushed onto the stack)
+            { prim: "CAR" },                                // Access the parameter from the stack (parameter is on top)
+            { prim: "DIP", args: [[{ prim: "CDR" }]] },     // Access the storage value (storage is on the stack)
+            { prim: "ADD" },                                // Add the parameter to the storage value
+            { prim: "NIL", args: [{ prim: "operation" }] }, // Create an empty list of operations
+            { prim: "PAIR" }                                // Pair the updated storage with the empty list of operations
         ]]
       }
     ],
-    storage: { "int": "0" }
+    storage: { int: "10" }
   }
 };
 
@@ -293,7 +293,7 @@ const tezosContractCallOperation: PartialTezosTransactionOperation = {
   kind: TezosOperationType.TRANSACTION,
   destination: "$(contractAddress)",
   amount: "0",
-  parameters: { entrypoint: "default", value: { prim: "Unit" } }
+  parameters: { entrypoint: "default", value: { int: "20" } } // Add 20 to the current storage value
 };
 
 const tezosDelegationOperation: PartialTezosDelegationOperation = {

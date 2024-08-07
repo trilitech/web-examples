@@ -1,6 +1,5 @@
-import { TezosToolkit } from '@taquito/taquito';
+import { ParamsWithKind, TezosToolkit } from '@taquito/taquito';
 import { InMemorySigner } from '@taquito/signer'
-import { validateAddress } from '@taquito/utils';
 
 import { Wallet } from 'ethers/'
 
@@ -91,64 +90,15 @@ export default class TezosLib {
   public async signTransaction(transaction: any) {
     // Map the transactions and prepare the batch
     console.log(`Wallet: handling transaction: `, transaction);
-
-    const batchTransactions = transaction.map((tx: any) => {
+    const batchTransactions: ParamsWithKind[] = transaction.map((tx: any) => {
       switch (tx.kind) {
-        case 'transaction':
-          if (!tx.amount || isNaN(tx.amount)) {
-            throw new Error(`tx.amount is not a number: ${tx.amount}`);
-          }
-          if (!tx.destination || validateAddress(tx.destination) !== 3) {
-            throw new Error(`tx.destination contains invalid address ${tx.destination}`);
-          }
-          return {
-            kind: 'transaction',
-            amount: tx.amount,
-            to: tx.destination,
-            mutez: tx.mutez ?? false,
-            parameters: tx.parameters,
-          };
-        case 'origination':
-          if (tx.source && validateAddress(tx.source) !== 3) {
-            throw new Error(`tx.source contains invalid address ${tx.source}`);
-          }
-          if (!tx.balance || isNaN(tx.balance)) {
-            throw new Error(`tx.balance is not a number: ${tx.balance}`);
-          }
-          if (!tx.script || !tx.script.code) {
-            throw new Error(`tx.script.code is not defined: ${tx.script}`);
-          }
-          if (!tx.script.storage) {
-            throw new Error(`tx.script.storage is not defined: ${tx.script}`);
-          }
-          return {
-            kind: 'origination',
-            source: tx.source,
-            balance: tx.balance,
-            code: tx.script.code,
-            init: tx.script.storage,
-            parameters: tx.parameters,
-          };
         case 'delegation':
-          if (tx.source && validateAddress(tx.source) !== 3) {
-            throw new Error(`tx.source contains invalid address ${tx.source}`);
-          }
-          if (!tx.delegate) {
-            console.log(`Wallet: undelegating for ${tx.source}`);
-            return {
-              kind: 'delegation',
-              source: tx.source,
-            };
-          } else if (validateAddress(tx.delegate) !== 3) {
-            throw new Error(`tx.delegate contains invalid address ${tx.delegate}`);
-          }
           return {
-            kind: 'delegation',
-            source: tx.source,
-            delegate: tx.delegate,
-          };
+            ...tx,
+            source: tx.source ?? this.address
+          }
         default:
-          throw new Error(`Unsupported transaction kind: ${tx.kind}`);
+          return tx as ParamsWithKind;
       }
     });
 
