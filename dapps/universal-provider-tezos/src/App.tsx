@@ -7,9 +7,14 @@ import { DEFAULT_TEZOS_KINDS, DEFAULT_TEZOS_METHODS } from "./utils/samples";
 const projectId = import.meta.env.VITE_PROJECT_ID;
 
 const events: string[] = [];
+// const events = ["display_uri", "chainChanged", "accountsChanged", "disconnect"];
+// const rpcMap = {
+//   "tezos:mainnet": "https://mainnet.smartpy.io",
+//   "tezos:testnet": "https://testnet.smartpy.io"
+// }
 
 // 1. select chains (tezos)
-const chains = Object.values(TezosChainData).map(chain => chain.id); // extracting ids from TezosChainData
+const chains = ["tezos:mainnet", "tezos:testnet"];
 
 // 2. select methods (tezos)
 const methods = ["tezos_sign", "tezos_send"];
@@ -22,7 +27,8 @@ const modal = new WalletConnectModal({
 
 // 4. create provider instance
 const provider = await UniversalProvider.init({
-  logger: "error",
+  logger: "debug",
+  // relayUrl: "wss://relay.walletconnect.com",
   projectId: projectId,
   metadata: {
     name: "WalletConnect x Tezos",
@@ -30,6 +36,7 @@ const provider = await UniversalProvider.init({
     url: "https://walletconnect.com/",
     icons: ["https://avatars.githubusercontent.com/u/37784886"],
   },
+  // client: undefined, // optional instance of @walletconnect/sign-client
 });
 
 const App = () => {
@@ -46,10 +53,26 @@ const App = () => {
 
   // 6. handle display_uri event and open modal
   provider.on("display_uri", async (uri: string) => {
-    console.log("uri", uri);
+    console.log("event display_uri", uri);
     await modal.openModal({
       uri,
     });
+  });
+
+  provider.on("session_ping", ({ id, topic }: { id: string; topic: string }) => {
+    console.log("Session Ping:", id, topic);
+  });
+
+  provider.on("session_event", ({ event, chainId }: { event: any; chainId: string }) => {
+    console.log("Session Event:", event, chainId);
+  });
+
+  provider.on("session_update", ({ topic, params }: { topic: string; params: any }) => {
+    console.log("Session Update:", topic, params);
+  });
+
+  provider.on("session_delete", ({ id, topic }: { id: string; topic: string }) => {
+    console.log("Session Delete:", id, topic);
   });
 
   // 7. handle connect event
@@ -60,14 +83,17 @@ const App = () => {
           tezos: {
             methods,
             chains,
-            events,
+            events:[],
+            // rpcMap
           },
         },
       });
       setIsConnected(true);
-      console.log("session", provider.session);
-    } catch {
-      console.log("Something went wrong, request cancelled");
+      console.log("Connected successfully. Session", provider.session);
+
+      // provider.setDefaultChain(`tezos:testnet`);
+    } catch (error) {
+      console.error("Connection error:", error);
     }
     modal.closeModal();
   };

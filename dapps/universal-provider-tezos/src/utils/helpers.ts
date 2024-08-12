@@ -113,7 +113,6 @@ export const signMessage = async (
   address: string
 ) => {
     const payload = "05010000004254";
-  try {
     const result = await provider!.request<{ signature: string }>({
       method: "tezos_sign",
       params: {
@@ -135,10 +134,6 @@ export const signMessage = async (
       valid: true,
       result: result.signature,
     };
-    //eslint-disable-next-line
-  } catch (error: any) {
-    throw new Error(error);
-  }
 };
 
 export const sendTransaction = async (
@@ -149,60 +144,56 @@ export const sendTransaction = async (
   contractAddress?: string
 ) => {
   let operation;
-  try {
-    switch (method) {
-      case DEFAULT_TEZOS_METHODS.TEZOS_SEND_TRANSACTION:
-        operation = DEFAULT_TEZOS_KINDS[method]
-        break;
+  switch (method) {
+    case DEFAULT_TEZOS_METHODS.TEZOS_SEND_TRANSACTION:
+      operation = DEFAULT_TEZOS_KINDS[method]
+      break;
 
-      case DEFAULT_TEZOS_METHODS.TEZOS_SEND_DELEGATION:
-        operation = DEFAULT_TEZOS_KINDS[method]
-        break;
+    case DEFAULT_TEZOS_METHODS.TEZOS_SEND_DELEGATION:
+      operation = DEFAULT_TEZOS_KINDS[method]
+      break;
 
-      case DEFAULT_TEZOS_METHODS.TEZOS_SEND_UNDELEGATION:
-        operation = DEFAULT_TEZOS_KINDS[method]
-        break;
+    case DEFAULT_TEZOS_METHODS.TEZOS_SEND_UNDELEGATION:
+      operation = DEFAULT_TEZOS_KINDS[method]
+      break;
 
-      case DEFAULT_TEZOS_METHODS.TEZOS_SEND_ORGINATION:
-        operation = DEFAULT_TEZOS_KINDS[method]
-        break;
+    case DEFAULT_TEZOS_METHODS.TEZOS_SEND_ORGINATION:
+      operation = DEFAULT_TEZOS_KINDS[method]
+      break;
 
-      case DEFAULT_TEZOS_METHODS.TEZOS_SEND_CONTRACT_CALL:
-        // make deep copy of the operation
-        operation = JSON.parse(JSON.stringify(DEFAULT_TEZOS_KINDS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_CONTRACT_CALL]));
-        operation.destination = contractAddress
-          ? contractAddress
-          : "[ERROR: example dApp was unable to set the contractAddress. Not provided.]";
-        break;
+    case DEFAULT_TEZOS_METHODS.TEZOS_SEND_CONTRACT_CALL:
+      // make deep copy of the operation
+      operation = JSON.parse(JSON.stringify(DEFAULT_TEZOS_KINDS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_CONTRACT_CALL]));
+      operation.destination = contractAddress
+        ? contractAddress
+        : "[ERROR: example dApp was unable to set the contractAddress. Not provided.]";
+      break;
 
-      default:
-        throw new Error('Unsupported method ${method}');
-    }
+    default:
+      throw new Error('Unsupported method ${method}');
+  }
 
-    const taquitoOperation: PartialParamsWithKind = convertToPartialParamsWithKind(operation);
-    console.log("TezosRpc operation: ", operation);
-    const result = await provider!.request<{ hash: string }>({
-      method: "tezos_send",
-      params: {
-        chainId: chainId,
-        topic: provider.session!.topic,
-        request: {
-          method: DEFAULT_TEZOS_METHODS.TEZOS_SEND,
-          params: {
-            account: address,
-            operations: [taquitoOperation],
-          },
+  const taquitoOperation: PartialParamsWithKind = convertToPartialParamsWithKind(operation);
+  console.log("TezosRpc operation: ", operation);
+  const result = await provider!.request<{ hash: string }>({
+    method: "tezos_send",
+    params: {
+      chainId: chainId,
+      topic: provider.session!.topic,
+      request: {
+        method: DEFAULT_TEZOS_METHODS.TEZOS_SEND,
+        params: {
+          account: address,
+          operations: [taquitoOperation],
         },
       },
-    });
+    },
+  });
 
-    return {
-      method,
-      address,
-      valid: true,
-      result: result.hash,
-    };
-  } catch (error: any) {
-    throw new Error(error);
-  }
+  return {
+    method,
+    address,
+    valid: true,
+    result: result.hash,
+  };
 };
