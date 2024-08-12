@@ -44,6 +44,10 @@ export async function approveTezosRequest(
       }
 
     case TEZOS_SIGNING_METHODS.TEZOS_SIGN:
+      if (!wallet.signer) {
+        console.error("Signer is not initialized. Reload the wallet page and try again");
+        return formatJsonRpcError(id, "Signer is not initialized. See the error log on wallet");
+      }
       const signResponse = await wallet.signPayload(request.params.payload)
 
       return formatJsonRpcResult(id, { signature: signResponse.prefixSig })

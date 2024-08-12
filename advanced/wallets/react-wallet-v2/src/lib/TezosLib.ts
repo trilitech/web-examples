@@ -61,6 +61,7 @@ export default class TezosLib {
     const Tezos = new TezosToolkit('https://rpc.ghostnet.teztnets.com')
 
     const signer = InMemorySigner.fromMnemonic(params)
+    console.log(`Created Wallet signer: `, signer);
 
     Tezos.setSignerProvider(signer)
 
@@ -118,6 +119,9 @@ export default class TezosLib {
   }
 
   public async signPayload(payload: any) {
+    if (!this.signer) {
+      throw new Error('Signer is not initialized. Reload the wallet page and try again')
+    }
     return await this.signer.sign(payload)
   }
 }
