@@ -210,7 +210,7 @@ const App = () => {
   const describeClear = () => {
     setDescription(undefined);
   };
-  
+
   return (
     <div className="App">
       <h1>TezosProvider</h1>
@@ -229,36 +229,35 @@ const App = () => {
             <b>Balance: </b>
             {balance}
           </p>
-          <div className="btn-container">
-          <button onClick={() => handleOp("tezos_getAccounts")}  onMouseEnter={describeClear}>Get Accounts</button>
-          <button onClick={() => handleOp("tezos_sign")}  onMouseEnter={describeClear}>Sign</button>
-          <button onClick={disconnect} onMouseEnter={describeClear}>Disconnect</button>
+          <div className="layout-container">
+            <div className="btn-container">
+              <button onClick={disconnect} onMouseEnter={describeClear}>Disconnect</button>
+              <button onClick={() => handleOp("tezos_getAccounts")}  onMouseEnter={describeClear}>Get Accounts</button>
+              <button onClick={() => handleOp("tezos_sign")}  onMouseEnter={describeClear}>Sign</button>
+              <button onClick={() => handleOp("tezos_send_transaction")}  onMouseEnter={() => describe("tezos_send_transaction")}>Send Transaction</button>
+              <button onClick={() => handleOp("tezos_send_delegation")}  onMouseEnter={() => describe("tezos_send_delegation")}>Delegate</button>
+              <button onClick={() => handleOp("tezos_send_undelegation")}  onMouseEnter={() => describe("tezos_send_undelegation")}>Undelegate</button>
+              <button onClick={() => handleOp("tezos_send_origination")}  onMouseEnter={() => describe("tezos_send_origination")}>Originate</button>
+              <button onClick={() => handleOp("tezos_send_contract_call")}  onMouseEnter={() => describe("tezos_send_contract_call")}>Contract call</button>
+              <button onClick={() => handleOp("tezos_send_stake")}  onMouseEnter={() => describe("tezos_send_stake")}>Stake</button>
+              <button onClick={() => handleOp("tezos_send_unstake")}  onMouseEnter={() => describe("tezos_send_unstake")}>Unstake</button>
+              <button onClick={() => handleOp("tezos_send_finalize")}  onMouseEnter={() => describe("tezos_send_finalize")}>Finalize</button>
+            </div>
+            <div className="result-column">
+              {result && (
+                <>
+                  <p>Result of the last operation:</p>
+                  <pre>{JSON.stringify(result, null, 2)}</pre>
+                </>
+              )}
+            {description && (
+                <>
+                  <p>Operation:</p>
+                  <pre>{JSON.stringify(description, null, 2)}</pre>
+                </>
+              )}
+            </div>
           </div>
-          <div className="btn-container">
-          <button onClick={() => handleOp("tezos_send_transaction")}  onMouseEnter={() => describe("tezos_send_transaction")}>Send Transaction</button>
-          <button onClick={() => handleOp("tezos_send_delegation")}  onMouseEnter={() => describe("tezos_send_delegation")}>Delegate</button>
-          <button onClick={() => handleOp("tezos_send_undelegation")}  onMouseEnter={() => describe("tezos_send_undelegation")}>Undelegate</button>
-          <button onClick={() => handleOp("tezos_send_origination")}  onMouseEnter={() => describe("tezos_send_origination")}>Originate</button>
-          <button onClick={() => handleOp("tezos_send_contract_call")}  onMouseEnter={() => describe("tezos_send_contract_call")}>Contract call</button>
-          </div>
-          <div className="btn-container">
-          <button onClick={() => handleOp("tezos_send_stake")}  onMouseEnter={() => describe("tezos_send_stake")}>Stake</button>
-          <button onClick={() => handleOp("tezos_send_unstake")}  onMouseEnter={() => describe("tezos_send_unstake")}>Unstake</button>
-          <button onClick={() => handleOp("tezos_send_finalize")}  onMouseEnter={() => describe("tezos_send_finalize")}>Finalize</button>
-          <button onClick={() => handleOp("tezos_send_ballot")}  onMouseEnter={() => describe("tezos_send_ballot")}>Ballot</button>
-          </div>
-          {result && (
-            <>
-              <p>Result of the last operation:</p>
-              <pre>{JSON.stringify(result, null, 2)}</pre>
-            </>
-          )}
-          {description && (
-            <>
-              <p>Operation:</p>
-              <pre>{JSON.stringify(description, null, 2)}</pre>
-            </>
-          )}
         </>
       ) : (
         <>

@@ -62,11 +62,33 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+.layout-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-direction: row;
+  gap: 2rem;
+}
+
 .btn-container {
   display: flex;
-  align-items: left;
-  justify-content: left;
+  flex-direction: column;
   gap: 1rem;
+  margin-right: 20px;
+}
+
+.result-column {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  margin-top: 20px; /* Space between the result and the description */
+}
+
+pre {
+  background-color: #f4f4f4;
+  padding: 10px;
+  border-radius: 5px;
+  overflow-x: auto;
 }
 
 @media (prefers-color-scheme: light) {
@@ -79,5 +101,6 @@ button:focus-visible {
   }
   button {
     background-color: #f9f9f9;
+    width: 250px;
   }
 }
