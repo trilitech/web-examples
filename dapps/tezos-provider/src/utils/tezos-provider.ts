@@ -2,12 +2,14 @@ import { UniversalProvider, Metadata } from "@walletconnect/universal-provider";
 import { KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
 import { Logger } from "@walletconnect/logger";
 import { TezosToolkit } from "@taquito/taquito";
-import { DEFAULT_TEZOS_METHODS } from "./samples";
 import { 
   PartialTezosDelegationOperation, 
+  PartialTezosIncreasePaidStorageOperation, 
   PartialTezosOperation as PartialTezosOperationOriginal, 
   PartialTezosOriginationOperation as PartialTezosOriginationOperationOriginal,
+  PartialTezosRegisterGlobalConstantOperation,
   PartialTezosTransactionOperation, 
+  TezosActivateAccountOperation, 
   TezosBallotOperation, 
   TezosOperationType 
 } from "@airgap/beacon-types";
@@ -103,8 +105,8 @@ export interface TezosConnectOpts {
 
 export enum TezosMethod {
   GET_ACCOUNTS = "tezos_getAccounts",
-  SEND = "tezos_sign",
-  SIGN = "tezos_send"
+  SEND = "tezos_send",
+  SIGN = "tezos_sign"
 }
 
 export enum TezosEvent { 
@@ -301,9 +303,9 @@ class TezosProvider {
   }
 
   public async checkConnection(): Promise<boolean> {
-    if (!this.isConnected) {
+    if (!this.isConnected || !this.address) {
       throw new TezosConnectionError();
-    }
+    }    
     return true;
   }
   
@@ -316,7 +318,7 @@ class TezosProvider {
     await this.checkConnection();
   
     const result = await this.signer.request<TezosGetAccountResponse>({
-      method: DEFAULT_TEZOS_METHODS.TEZOS_GET_ACCOUNTS,
+      method: TezosMethod.GET_ACCOUNTS,
       params: {},
     }, this.chainId);
     this.accounts = result.map((account) => account.address);
@@ -332,7 +334,7 @@ class TezosProvider {
     await this.checkConnection();
     
     const result = await this.signer.request<TezosSignResponse>({
-      method: DEFAULT_TEZOS_METHODS.TEZOS_SIGN,
+      method: TezosMethod.SIGN,
       params: {
         account: this.address,
         payload,
@@ -347,10 +349,14 @@ class TezosProvider {
     if (!this.signer) {
       throw new TezosInitializationError();
     }
+    if (!this.address) {
+      throw new TezosConnectionError();
+    }
+
     await this.checkConnection();
     
     const result = await this.signer.request<TezosSendResponse>({
-      method: DEFAULT_TEZOS_METHODS.TEZOS_SEND,
+      method: TezosMethod.SEND,
       params: {
         account: this.address,
         operations: [op],
@@ -441,11 +447,23 @@ class TezosProvider {
     return this.tezosSend(this.createStakingOperation("finalize_unstake", op));
   }
 
-  public async tezosSendBallot(op: TezosBallotOperation): Promise<TezosSendResponse> {
+  public async tezosSendActivateAccountt(op: TezosActivateAccountOperation): Promise<TezosSendResponse> {
     if (!this.address) {
       throw new TezosConnectionError();
     }
-    return this.tezosSend({...op, source: this.address});
+    return this.tezosSend({...op, pkh: this.address});
+  }
+
+  public async tezosSendBallot(op: TezosBallotOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendRegisterGlobalConstant(op: PartialTezosRegisterGlobalConstantOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendIncreasePaidStorage(op: PartialTezosIncreasePaidStorageOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
   }
 
 }

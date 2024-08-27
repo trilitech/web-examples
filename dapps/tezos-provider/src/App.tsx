@@ -1,8 +1,7 @@
 import { WalletConnectModal } from "@walletconnect/modal";
 import { useState } from "react";
-import { TEZOS_ACTIONS, DEFAULT_TEZOS_METHODS } from "./utils/samples";
+import { SAMPLES, SAMPLE_KINDS } from "./utils/samples";
 import TezosProvider, { formatTezosBalance, getChainId, TezosChainDataMainnet, TezosChainDataTestnet } from "./utils/tezos-provider";
-import { PartialTezosTransactionOperation, TezosBallotOperation } from "@airgap/beacon-types";
 
 const projectId = import.meta.env.VITE_PROJECT_ID;
 
@@ -25,6 +24,7 @@ const provider: TezosProvider = await TezosProvider.init({
 
 const App = () => {
   const [isConnected, setIsConnected] = useState(false);
+  const [lastKind, setLastKind] = useState<any>(null);
   const [result, setResult] = useState<any>(null);
   const [description, setDescription] = useState<any>(null);
   const [contractAddress, setContractAddress] = useState("");
@@ -42,19 +42,19 @@ const App = () => {
     });
 
     provider.signer.on("session_ping", ({ id, topic }: { id: string; topic: string }) => {
-      console.log("Session Ping:", id, topic);
+      console.log("Event session_ping:", id, topic);
     });
 
     provider.signer.on("session_event", ({ event, chainId }: { event: any; chainId: string }) => {
-      console.log("Session Event:", event, chainId);
+      console.log("Event session_event:", event, chainId);
     });
 
     provider.signer.on("session_update", ({ topic, params }: { topic: string; params: any }) => {
-      console.log("Session Update:", topic, params);
+      console.log("Event session_update:", topic, params);
     });
 
     provider.signer.on("session_delete", ({ id, topic }: { id: string; topic: string }) => {
-      console.log("Session Delete:", id, topic);
+      console.log("Event session_delete:", id, topic);
     });
   }
 
@@ -67,6 +67,7 @@ const App = () => {
 
   // 4. handle connect event
   const connect = async () => {
+    window.localStorage.removeItem('walletconnect');
     try {
       await provider.connect({chains: [TezosChainDataTestnet, TezosChainDataMainnet]});
       setIsConnected(true);
@@ -85,34 +86,38 @@ const App = () => {
     if (provider.signer) {
       await provider.signer.disconnect();
     }
+    window.localStorage.removeItem('walletconnect');
     setIsConnected(false);
     setResult(null); // Clear result on disconnect
   };
 
   // 6. handle operations
-  const handleOp = async (method: string) => {
+  const handleOp = async (kind: SAMPLE_KINDS) => {
     if (!provider) return;
+
+    setLastKind(kind);
+    setResult("Waiting for response from the Wallet...");
 
     try {
       let res = null;
-      switch (method) {
-        case "tezos_getAccounts":
+      switch (kind) {
+        case SAMPLE_KINDS.GET_ACCOUNTS:
           res = await provider.tezosGetAccounts();
           break;
-        case "tezos_sign":
+        case SAMPLE_KINDS.SIGN:
           res = await provider.tezosSign("05010000004254");
           break;
-        case "tezos_send_transaction":
-          res = await provider.tezosSendTransaction(TEZOS_ACTIONS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_TRANSACTION]);
+        case SAMPLE_KINDS.SEND_TRANSACTION:
+          res = await provider.tezosSendTransaction(SAMPLES[SAMPLE_KINDS.SEND_TRANSACTION]);
           break;
-        case "tezos_send_delegation":
-          res = await provider.tezosSendDelegation(TEZOS_ACTIONS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_DELEGATION]);
+        case SAMPLE_KINDS.SEND_DELEGATION:
+          res = await provider.tezosSendDelegation(SAMPLES[SAMPLE_KINDS.SEND_DELEGATION]);
           break;
-        case "tezos_send_undelegation":
+        case SAMPLE_KINDS.SEND_UNDELEGATION:
           res = await provider.tezosSendUndelegation();
           break;
-        case "tezos_send_origination":
-          res = await provider.tezosSendOrigination(TEZOS_ACTIONS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_ORGINATION]);
+        case SAMPLE_KINDS.SEND_ORGINATION:
+          res = await provider.tezosSendOrigination(SAMPLES[SAMPLE_KINDS.SEND_ORGINATION]);
           const contractAddressList = await provider.getContractAddress(res.hash);
           if (contractAddressList.length > 0) {
             setContractAddress(contractAddressList[0]);
@@ -121,86 +126,79 @@ const App = () => {
             console.error("TezosRpc could not find contract address in origination operation.");
           }
           break;
-        case "tezos_send_contract_call":
-          const contract_call: PartialTezosTransactionOperation = {
-            ...TEZOS_ACTIONS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_CONTRACT_CALL],
+        case SAMPLE_KINDS.SEND_CONTRACT_CALL:
+          res = await provider.tezosSendContractCall({
+            ...SAMPLES[SAMPLE_KINDS.SEND_CONTRACT_CALL],
             destination: contractAddress,
-          };
-          res = await provider.tezosSendContractCall(contract_call);
+          });
           break;
-        case "tezos_send_stake":
-          res = await provider.tezosSendStake(TEZOS_ACTIONS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_STAKE]);
+        case SAMPLE_KINDS.SEND_STAKE:
+          res = await provider.tezosSendStake(SAMPLES[SAMPLE_KINDS.SEND_STAKE]);
           break;
-        case "tezos_send_unstake":
-          res = await provider.tezosSendUnstake(TEZOS_ACTIONS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_UNSTAKE]);
+        case SAMPLE_KINDS.SEND_UNSTAKE:
+          res = await provider.tezosSendUnstake(SAMPLES[SAMPLE_KINDS.SEND_UNSTAKE]);
           break;
-        case "tezos_send_finalize":
-          res = await provider.tezosSendFinalizeUnstake(TEZOS_ACTIONS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_FINALIZE]);
+        case SAMPLE_KINDS.SEND_FINALIZE:
+          res = await provider.tezosSendFinalizeUnstake(SAMPLES[SAMPLE_KINDS.SEND_FINALIZE]);
           break;
-        case "tezos_send_ballot":
-          const proposal = await provider.getCurrentProposal() || "[no proposal in progress]";
-          const ballot : TezosBallotOperation = {
-            ...TEZOS_ACTIONS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_BALLOT],
-            proposal: proposal
-          };
-          res = await provider.tezosSendBallot(ballot);
+        case SAMPLE_KINDS.SEND_INCREASE_PAID_STORAGE:
+          res = await provider.tezosSendIncreasePaidStorage({
+            ...SAMPLES[SAMPLE_KINDS.SEND_INCREASE_PAID_STORAGE],
+            destination: contractAddress,
+          });
           break;
-          
+            
         default:
-          throw new Error(`Unsupported method ${method}`);
+          throw new Error(`App: Unsupported kind ${kind}`);
       }
+      setLastKind(kind);
       setResult(res);
       await getBalance();
     } catch (error) {
       if (error instanceof Error) {
-        console.error(`Error sending ${method}:`, error.name, error.message);
+        console.error(`Error sending ${kind}:`, error.name, error.message);
         setResult([error.name, error.message]);
       } else {
-        console.error(`Error sending ${method}:`, error);
+        console.error(`Error sending ${kind}:`, error);
         setResult(error);
       }
-      
     }
   };
 
-  const describe = (method: string) => {
-    switch (method) {
-      case "tezos_send_transaction":
-        setDescription(TEZOS_ACTIONS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_TRANSACTION]);
+  const describe = (kind: SAMPLE_KINDS) => {
+    switch (kind) {
+      case SAMPLE_KINDS.SEND_TRANSACTION:
+        setDescription(SAMPLES[kind]);
         break;
-      case "tezos_send_delegation":
-        setDescription(TEZOS_ACTIONS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_DELEGATION]);
+      case SAMPLE_KINDS.SEND_DELEGATION:
+        setDescription(SAMPLES[kind]);
         break;
-      case "tezos_send_undelegation":
-        setDescription(TEZOS_ACTIONS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_UNDELEGATION]);
+      case SAMPLE_KINDS.SEND_UNDELEGATION:
+        setDescription(SAMPLES[kind]);
         break;
-      case "tezos_send_origination":
-        setDescription(TEZOS_ACTIONS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_ORGINATION]);
+      case SAMPLE_KINDS.SEND_ORGINATION:
+        setDescription(SAMPLES[kind]);
         break;
-      case "tezos_send_contract_call":
-        const contract_call = {
-          ...TEZOS_ACTIONS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_CONTRACT_CALL],
-          destination: contractAddress
-            ? contractAddress
-            : "[click Origination to get contract address]",
-        };
-        setDescription(contract_call);
+      case SAMPLE_KINDS.SEND_CONTRACT_CALL:
+        setDescription({
+          ...SAMPLES[kind],
+          destination: contractAddress ? contractAddress : "[click Origination to get contract address]",
+        });
         break;
-      case "tezos_send_stake":
-        setDescription({...TEZOS_ACTIONS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_STAKE], destination: provider.address});
+      case SAMPLE_KINDS.SEND_STAKE:
+        setDescription({...SAMPLES[kind], destination: provider.address});
         break;
-      case "tezos_send_unstake":
-        setDescription({...TEZOS_ACTIONS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_UNSTAKE], destination: provider.address});
+      case SAMPLE_KINDS.SEND_UNSTAKE:
+        setDescription({...SAMPLES[kind], destination: provider.address});
         break;
-      case "tezos_send_finalize":
-        setDescription({...TEZOS_ACTIONS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_FINALIZE], destination: provider.address});
+      case SAMPLE_KINDS.SEND_FINALIZE:
+        setDescription({...SAMPLES[kind], destination: provider.address});
         break;
-      case "tezos_send_ballot":
-        const ballot = {
-          ...TEZOS_ACTIONS[DEFAULT_TEZOS_METHODS.TEZOS_SEND_BALLOT],
-          source: provider.address,
-        };
-        setDescription(ballot);
+      case SAMPLE_KINDS.SEND_INCREASE_PAID_STORAGE:
+        setDescription({
+          ...SAMPLES[kind],
+          destination: contractAddress ? contractAddress : "[click Origination to get contract address]",
+        });
         break;
       default:
         setDescription("No description available");
@@ -232,21 +230,23 @@ const App = () => {
           <div className="layout-container">
             <div className="btn-container">
               <button onClick={disconnect} onMouseEnter={describeClear}>Disconnect</button>
-              <button onClick={() => handleOp("tezos_getAccounts")}  onMouseEnter={describeClear}>Get Accounts</button>
-              <button onClick={() => handleOp("tezos_sign")}  onMouseEnter={describeClear}>Sign</button>
-              <button onClick={() => handleOp("tezos_send_transaction")}  onMouseEnter={() => describe("tezos_send_transaction")}>Send Transaction</button>
-              <button onClick={() => handleOp("tezos_send_delegation")}  onMouseEnter={() => describe("tezos_send_delegation")}>Delegate</button>
-              <button onClick={() => handleOp("tezos_send_undelegation")}  onMouseEnter={() => describe("tezos_send_undelegation")}>Undelegate</button>
-              <button onClick={() => handleOp("tezos_send_origination")}  onMouseEnter={() => describe("tezos_send_origination")}>Originate</button>
-              <button onClick={() => handleOp("tezos_send_contract_call")}  onMouseEnter={() => describe("tezos_send_contract_call")}>Contract call</button>
-              <button onClick={() => handleOp("tezos_send_stake")}  onMouseEnter={() => describe("tezos_send_stake")}>Stake</button>
-              <button onClick={() => handleOp("tezos_send_unstake")}  onMouseEnter={() => describe("tezos_send_unstake")}>Unstake</button>
-              <button onClick={() => handleOp("tezos_send_finalize")}  onMouseEnter={() => describe("tezos_send_finalize")}>Finalize</button>
+              <button onClick={() => handleOp(SAMPLE_KINDS.GET_ACCOUNTS)}  onMouseEnter={describeClear}>Get Accounts</button>
+              <button onClick={() => handleOp(SAMPLE_KINDS.SIGN)}  onMouseEnter={describeClear}>Sign</button>
+              <button onClick={() => handleOp(SAMPLE_KINDS.SEND_TRANSACTION)}  onMouseEnter={() => describe(SAMPLE_KINDS.SEND_TRANSACTION)}>Send Transaction</button>
+              <button onClick={() => handleOp(SAMPLE_KINDS.SEND_DELEGATION)}  onMouseEnter={() => describe(SAMPLE_KINDS.SEND_DELEGATION)}>Delegate</button>
+              <button onClick={() => handleOp(SAMPLE_KINDS.SEND_UNDELEGATION)}  onMouseEnter={() => describe(SAMPLE_KINDS.SEND_UNDELEGATION)}>Undelegate</button>
+              <button onClick={() => handleOp(SAMPLE_KINDS.SEND_ORGINATION)}  onMouseEnter={() => describe(SAMPLE_KINDS.SEND_ORGINATION)}>Originate</button>
+              <button onClick={() => handleOp(SAMPLE_KINDS.SEND_CONTRACT_CALL)}  onMouseEnter={() => describe(SAMPLE_KINDS.SEND_CONTRACT_CALL)}>Contract call</button>
+              <button onClick={() => handleOp(SAMPLE_KINDS.SEND_STAKE)}  onMouseEnter={() => describe(SAMPLE_KINDS.SEND_STAKE)}>Stake</button>
+              <button onClick={() => handleOp(SAMPLE_KINDS.SEND_UNSTAKE)}  onMouseEnter={() => describe(SAMPLE_KINDS.SEND_UNSTAKE)}>Unstake</button>
+              <button onClick={() => handleOp(SAMPLE_KINDS.SEND_FINALIZE)}  onMouseEnter={() => describe(SAMPLE_KINDS.SEND_FINALIZE)}>Finalize</button>
+              <button onClick={() => handleOp(SAMPLE_KINDS.SEND_INCREASE_PAID_STORAGE)} onMouseEnter={() => describe(SAMPLE_KINDS.SEND_INCREASE_PAID_STORAGE)}>Increase paid storage</button>
             </div>
             <div className="result-column">
               {result && (
                 <>
                   <p>Result of the last operation:</p>
+                  <pre>{lastKind}</pre>
                   <pre>{JSON.stringify(result, null, 2)}</pre>
                 </>
               )}
