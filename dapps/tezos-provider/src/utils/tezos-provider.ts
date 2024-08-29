@@ -35,14 +35,13 @@ import {
   TezosEndorsementWithSlotOperation, 
   TezosFailingNoopOperation, 
   TezosOperationType, 
-  TezosPreAttestationOperation, 
+  TezosPreAttestationOperation,
   TezosProposalOperation,
   TezosSeedNonceRevelationOperation,
   TezosVdfRevelationOperation
 } from "@airgap/beacon-types";
 
 import { ScriptedContracts } from "@taquito/rpc";
-import { TezosPreEndorsementOperation } from "@airgap/beacon-types/dist/esm/types/tezos/operations/PreEndorsement";
 
 interface PartialTezosOriginationOperation extends Omit<PartialTezosOriginationOperationOriginal, "script"> {
   script: ScriptedContracts;
@@ -535,10 +534,6 @@ class TezosProvider {
   }
 
   public async tezosSendPreAttestation(op: TezosPreAttestationOperation): Promise<TezosSendResponse> {
-    return this.tezosSend(op);
-  }
-
-  public async tezosSendPreEndorsement(op: TezosPreEndorsementOperation): Promise<TezosSendResponse> {
     return this.tezosSend(op);
   }
 

@@ -30,33 +30,43 @@ const App = () => {
   const [contractAddress, setContractAddress] = useState("");
   const [balance, setBalance] = useState("");
 
-  console.log("Provider", provider);
-
   // 3. handle display_uri event and open modal
-  if (provider.signer) {
-    provider.signer.on("display_uri", async (uri: string) => {
-      console.log("event display_uri", uri);
-      await modal.openModal({
-        uri,
+  const subscribe = async () => {
+    if (provider.signer) {
+      console.log("Subscribing to events...");
+      provider.signer.on("display_uri", async (uri: string) => {
+        console.log("event display_uri", uri);
+        await modal.openModal({
+          uri,
+        });
       });
-    });
 
-    provider.signer.on("session_ping", ({ id, topic }: { id: string; topic: string }) => {
-      console.log("Event session_ping:", id, topic);
-    });
+      provider.signer.on("session_ping", ({ id, topic }: { id: string; topic: string }) => {
+        console.log("Event session_ping:", id, topic);
+      });
 
-    provider.signer.on("session_event", ({ event, chainId }: { event: any; chainId: string }) => {
-      console.log("Event session_event:", event, chainId);
-    });
+      provider.signer.on("session_event", ({ event, chainId }: { event: any; chainId: string }) => {
+        console.log("Event session_event:", event, chainId);
+      });
 
-    provider.signer.on("session_update", ({ topic, params }: { topic: string; params: any }) => {
-      console.log("Event session_update:", topic, params);
-    });
+      provider.signer.on("session_update", ({ topic, params }: { topic: string; params: any }) => {
+        console.log("Event session_update:", topic, params);
+      });
 
-    provider.signer.on("session_delete", ({ id, topic }: { id: string; topic: string }) => {
-      console.log("Event session_delete:", id, topic);
-    });
-  }
+      provider.signer.on("session_delete", ({ id, topic }: { id: string; topic: string }) => {
+        console.log("Event session_delete:", id, topic);
+      });
+
+      provider.signer.on("connect", ({ id, topic }: { id: string; topic: string }) => {
+        console.log("Event connect:", id, topic);
+      });
+
+      provider.signer.on("disconnect", ({ id, topic }: { id: string; topic: string }) => {
+        console.log("Event disconnect:", id, topic);
+        setIsConnected(false);
+      });
+    }
+  };
 
   const getBalance = async () => {
     if (provider) {
@@ -68,7 +78,9 @@ const App = () => {
   // 4. handle connect event
   const connect = async () => {
     window.localStorage.removeItem('walletconnect');
+    console.log("Connecting...");
     try {
+      await subscribe();
       await provider.connect({chains: [TezosChainDataTestnet, TezosChainDataMainnet]});
       setIsConnected(true);
       console.log("Connected successfully. Provider", provider);
@@ -83,6 +95,7 @@ const App = () => {
 
   // 5. handle disconnect event
   const disconnect = async () => {
+    console.log("Disconnecting...");
     if (provider.signer) {
       await provider.signer.disconnect();
     }
