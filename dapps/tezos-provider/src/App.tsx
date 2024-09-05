@@ -1,7 +1,9 @@
 import { WalletConnectModal } from "@walletconnect/modal";
 import { useState } from "react";
 import { SAMPLES, SAMPLE_KINDS } from "./utils/samples";
-import TezosProvider, { formatTezosBalance, getChainId, TezosChainDataMainnet, TezosChainDataTestnet } from "./utils/tezos-provider";
+import TezosProvider, { TezosChainDataMainnet, TezosChainDataTestnet } from "@walletconnect/tezos-provider";
+import getChainId from "@walletconnect/tezos-provider"
+import formatTezosBalance from "@walletconnect/tezos-provider"
 
 const projectId = import.meta.env.VITE_PROJECT_ID;
 
@@ -71,7 +73,7 @@ const App = () => {
   const getBalance = async () => {
     if (provider) {
       const balance = await provider.getBalance();
-      setBalance(formatTezosBalance(balance));
+      setBalance(TezosProvider.formatTezosBalance(balance));
     }
   };
 
@@ -84,7 +86,7 @@ const App = () => {
       await provider.connect({chains: [TezosChainDataTestnet, TezosChainDataMainnet]});
       setIsConnected(true);
       console.log("Connected successfully. Provider", provider);
-      const chainId = await getChainId("tezos:testnet");
+      const chainId = await TezosProvider.extractChainId("tezos:testnet");
       console.log("Connected to chain:", chainId);
       await getBalance();
     } catch (error) {
