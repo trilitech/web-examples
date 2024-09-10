@@ -2,14 +2,43 @@ import { UniversalProvider, Metadata } from "@walletconnect/universal-provider";
 import { KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
 import { Logger } from "@walletconnect/logger";
 import { TezosToolkit } from "@taquito/taquito";
-import { DEFAULT_TEZOS_METHODS } from "./samples";
 import { 
+  PartialTezosDalPublishCommitmentOperation,
   PartialTezosDelegationOperation, 
+  PartialTezosIncreasePaidStorageOperation, 
   PartialTezosOperation as PartialTezosOperationOriginal, 
   PartialTezosOriginationOperation as PartialTezosOriginationOperationOriginal,
+  PartialTezosRegisterGlobalConstantOperation,
+  PartialTezosRevealOperation,
+  PartialTezosSetDepositsLimitOperation,
+  PartialTezosSmartRollupAddMessagesOperation,
+  PartialTezosSmartRollupCementOperation,
+  PartialTezosSmartRollupExecuteOutboxMessageOperation,
+  PartialTezosSmartRollupOriginateOperation,
+  PartialTezosSmartRollupPublishOperation,
+  PartialTezosSmartRollupRecoverBondOperation,
+  PartialTezosSmartRollupRefuteOperation,
+  PartialTezosSmartRollupTimeoutOperation,
   PartialTezosTransactionOperation, 
+  PartialTezosTransferTicketOperation, 
+  PartialTezosUpdateConsensusKeyOperation, 
+  TezosActivateAccountOperation, 
+  TezosAttestationOperation, 
+  TezosAttestationWithSlotOperation, 
   TezosBallotOperation, 
-  TezosOperationType 
+  TezosDoubleAttestationEvidenceOperation, 
+  TezosDoubleBakingEvidenceOperation, 
+  TezosDoublePreAttestationEvidenceOperation, 
+  TezosDoublePreEndorsementEvidenceOperation, 
+  TezosDrainDelegateOperation, 
+  TezosEndorsementOperation, 
+  TezosEndorsementWithSlotOperation, 
+  TezosFailingNoopOperation, 
+  TezosOperationType, 
+  TezosPreAttestationOperation,
+  TezosProposalOperation,
+  TezosSeedNonceRevelationOperation,
+  TezosVdfRevelationOperation
 } from "@airgap/beacon-types";
 
 import { ScriptedContracts } from "@taquito/rpc";
@@ -103,8 +132,8 @@ export interface TezosConnectOpts {
 
 export enum TezosMethod {
   GET_ACCOUNTS = "tezos_getAccounts",
-  SEND = "tezos_sign",
-  SIGN = "tezos_send"
+  SEND = "tezos_send",
+  SIGN = "tezos_sign"
 }
 
 export enum TezosEvent { 
@@ -301,9 +330,9 @@ class TezosProvider {
   }
 
   public async checkConnection(): Promise<boolean> {
-    if (!this.isConnected) {
+    if (!this.isConnected || !this.address) {
       throw new TezosConnectionError();
-    }
+    }    
     return true;
   }
   
@@ -316,7 +345,7 @@ class TezosProvider {
     await this.checkConnection();
   
     const result = await this.signer.request<TezosGetAccountResponse>({
-      method: DEFAULT_TEZOS_METHODS.TEZOS_GET_ACCOUNTS,
+      method: TezosMethod.GET_ACCOUNTS,
       params: {},
     }, this.chainId);
     this.accounts = result.map((account) => account.address);
@@ -332,7 +361,7 @@ class TezosProvider {
     await this.checkConnection();
     
     const result = await this.signer.request<TezosSignResponse>({
-      method: DEFAULT_TEZOS_METHODS.TEZOS_SIGN,
+      method: TezosMethod.SIGN,
       params: {
         account: this.address,
         payload,
@@ -347,10 +376,14 @@ class TezosProvider {
     if (!this.signer) {
       throw new TezosInitializationError();
     }
+    if (!this.address) {
+      throw new TezosConnectionError();
+    }
+
     await this.checkConnection();
     
     const result = await this.signer.request<TezosSendResponse>({
-      method: DEFAULT_TEZOS_METHODS.TEZOS_SEND,
+      method: TezosMethod.SEND,
       params: {
         account: this.address,
         operations: [op],
@@ -441,11 +474,131 @@ class TezosProvider {
     return this.tezosSend(this.createStakingOperation("finalize_unstake", op));
   }
 
-  public async tezosSendBallot(op: TezosBallotOperation): Promise<TezosSendResponse> {
+  public async tezosSendActivateAccount(op: TezosActivateAccountOperation): Promise<TezosSendResponse> {
     if (!this.address) {
       throw new TezosConnectionError();
     }
-    return this.tezosSend({...op, source: this.address});
+    return this.tezosSend({...op, pkh: this.address});
+  }
+
+  public async tezosSendAttestation(op: TezosAttestationOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendAttestationWithSlot(op: TezosAttestationWithSlotOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendBallot(op: TezosBallotOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendDalPublishCommitment(op: PartialTezosDalPublishCommitmentOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendDoubleAttestationEvidence(op: TezosDoubleAttestationEvidenceOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendDoubleBakingEvidence(op: TezosDoubleBakingEvidenceOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendDoublePreAttestationEvidence(op: TezosDoublePreAttestationEvidenceOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendDoublePreEndorsementEvidence(op: TezosDoublePreEndorsementEvidenceOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendDrainDelegate(op: TezosDrainDelegateOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendEndorsement(op: TezosEndorsementOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendEndorsementWithSlot(op: TezosEndorsementWithSlotOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendFailingNoop(op: TezosFailingNoopOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendIncreasePaidStorage(op: PartialTezosIncreasePaidStorageOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendPreAttestation(op: TezosPreAttestationOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendProposal(op: TezosProposalOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendRegisterGlobalConstant(op: PartialTezosRegisterGlobalConstantOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendReveal(op: PartialTezosRevealOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendSeedNonceRevelation(op: TezosSeedNonceRevelationOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendSetDepositsLimit(op: PartialTezosSetDepositsLimitOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendSmartRollupAddMessages(op: PartialTezosSmartRollupAddMessagesOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendSmartRollupCement(op: PartialTezosSmartRollupCementOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendSmartRollupExecuteOutboxMessage(op: PartialTezosSmartRollupExecuteOutboxMessageOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendSmartRollupOriginate(op: PartialTezosSmartRollupOriginateOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendSmartRollupPublish(op: PartialTezosSmartRollupPublishOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendSmartRollupRecoverBond(op: PartialTezosSmartRollupRecoverBondOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendSmartRollupRefute(op: PartialTezosSmartRollupRefuteOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendSmartRollupTimeout(op: PartialTezosSmartRollupTimeoutOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendTransferTicket(op: PartialTezosTransferTicketOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendUpdateConsensusKey(op: PartialTezosUpdateConsensusKeyOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
+  }
+
+  public async tezosSendVdfRevelation(op: TezosVdfRevelationOperation): Promise<TezosSendResponse> {
+    return this.tezosSend(op);
   }
 
 }

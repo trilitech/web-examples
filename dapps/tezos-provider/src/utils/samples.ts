@@ -1,10 +1,9 @@
 import {
+    TezosOperationType, 
+    PartialTezosTransactionOperation,
     PartialTezosDelegationOperation,
     PartialTezosOriginationOperation as PartialTezosOriginationOperationOriginal,
-    PartialTezosTransactionOperation,
-    TezosBallotOperation,
-    TezosOperationType, 
-    TezosTransactionOperation}
+    PartialTezosIncreasePaidStorageOperation}
     from "@airgap/beacon-types";
 
 import { ScriptedContracts } from "@taquito/rpc";
@@ -14,19 +13,19 @@ interface PartialTezosOriginationOperation
   script: ScriptedContracts;
 }
   
-export enum DEFAULT_TEZOS_METHODS {
-  TEZOS_GET_ACCOUNTS = "tezos_getAccounts",
-  TEZOS_SEND = "tezos_send",
-  TEZOS_SEND_TRANSACTION = "tezos_send:transaction",
-  TEZOS_SEND_ORGINATION = "tezos_send:origination",
-  TEZOS_SEND_CONTRACT_CALL = "tezos_send:contract_call",
-  TEZOS_SEND_DELEGATION = "tezos_send:delegation",
-  TEZOS_SEND_UNDELEGATION = "tezos_send:undelegation",
-  TEZOS_SEND_STAKE = "tezos_send:stake",
-  TEZOS_SEND_UNSTAKE = "tezos_send:unstake",
-  TEZOS_SEND_FINALIZE = "tezos_send:finalize",
-  TEZOS_SEND_BALLOT = "tezos_send:ballot",
-  TEZOS_SIGN = "tezos_sign",
+export enum SAMPLE_KINDS {
+  GET_ACCOUNTS = "tezos_getAccounts",
+  SEND = "tezos_send",
+  SEND_TRANSACTION = "tezos_send:transaction",
+  SEND_ORGINATION = "tezos_send:origination",
+  SEND_CONTRACT_CALL = "tezos_send:contract_call",
+  SEND_DELEGATION = "tezos_send:delegation",
+  SEND_UNDELEGATION = "tezos_send:undelegation",
+  SEND_STAKE = "tezos_send:stake",
+  SEND_UNSTAKE = "tezos_send:unstake",
+  SEND_FINALIZE = "tezos_send:finalize",
+  SEND_INCREASE_PAID_STORAGE = "tezos_send:increase_paid_storage",
+  SIGN = "tezos_sign",
 }
 
 const tezosTransactionOperation: PartialTezosTransactionOperation = {
@@ -103,16 +102,14 @@ const tezosFinalizeOperation: PartialTezosTransactionOperation = {
   },
 };
 
-const tezosBallotOperation: TezosBallotOperation = {
-  kind: TezosOperationType.BALLOT,
-  source: "tz3ZmB8oWUmi8YZXgeRpgAcPnEMD8VgUa4Ve", // Tezos Foundation Ghost Baker
-  period: "0",
-  proposal: "[current proposal]",
-  ballot: "yay"
+const TezosIncreasePaidStorageOperation: PartialTezosIncreasePaidStorageOperation = {
+  kind: TezosOperationType.INCREASE_PAID_STORAGE,
+  amount: "10",
+  destination: "[contract address]"
 };
 
 // Assign the specific types to the TEZOS_ACTIONS object
-export const TEZOS_ACTIONS = {
+export const SAMPLES = {
   "tezos_send:transaction": tezosTransactionOperation,
   "tezos_send:origination": tezosOriginationOperation,
   "tezos_send:contract_call": tezosContractCallOperation,
@@ -121,7 +118,7 @@ export const TEZOS_ACTIONS = {
   "tezos_send:stake": tezosStakeOperation,
   "tezos_send:unstake": tezosUnstakeOperation,
   "tezos_send:finalize": tezosFinalizeOperation,
-  "tezos_send:ballot": tezosBallotOperation,
+  "tezos_send:increase_paid_storage": TezosIncreasePaidStorageOperation,
 };
 
 export enum DEFAULT_TEZOS_EVENTS {}

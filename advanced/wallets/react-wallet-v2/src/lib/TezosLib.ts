@@ -153,7 +153,7 @@ export default class TezosLib {
           message: op.message,
         };
       case TezosOperationType.SMART_ROLLUP_ORIGINATE:
-        if (!(op.pvm_kind in PvmKind)) {
+        if (!Object.values(PvmKind).includes(op.pvm_kind)) {
           throw new Error(`Invalid PvmKind: ${op.pvm_kind}`);
         }
         return {
